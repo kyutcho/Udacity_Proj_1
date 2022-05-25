@@ -5,6 +5,7 @@ Date: May 2022
 """
 
 # import libraries
+from ast import Constant
 import constants
 from sklearn.preprocessing import normalize
 from sklearn.model_selection import train_test_split
@@ -27,12 +28,6 @@ sns.set()
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 
 
-# @pytest.fixture(scope="module")
-# def df_path():
-#     return './data/bank_data.csv'
-
-
-@pytest.fixture
 def import_data(df_path):
     '''
     Returns dataframe for the csv found at pth
@@ -43,6 +38,9 @@ def import_data(df_path):
             df: pandas dataframe
     '''
     df = pd.read_csv(df_path)
+
+    df['Churn'] = df['Attrition_Flag'].apply(lambda val: 0 if val == "Existing Customer" else 1)
+
     return df
 
 
@@ -97,6 +95,7 @@ def perform_eda(df):
     Output:
             None
     '''
+
     plot_df_helper(df.describe(), 'df_description', constants.EDA_OUT_PATH)
     plt_plot_helper(df['Churn'], 'hist', 'Churn', constants.EDA_OUT_PATH)
     plt_plot_helper(df['Customer_Age'], 'hist', 'Customer_Age', constants.EDA_OUT_PATH)
@@ -120,8 +119,7 @@ def encoder_helper(df, category_lst, response):
     '''
     for category in category_lst:
         new_col_name = category + '_' + response
-        df[new_col_name] = df.groupby(
-            category)[response].transform(lambda x: x.mean())
+        df[new_col_name] = df.groupby(category)[response].transform(lambda x: x.mean())
 
     return df
 
@@ -263,6 +261,7 @@ def feature_importance_plot(model, X_data, file_path):
     # Add feature names as x-axis labels
     plt.xticks(range(X_data.shape[1]), names, rotation=90)
 
+    file_path += 'feature_importance.png'
     plt.savefig(file_path)
 
 
@@ -278,8 +277,6 @@ def train_models(X_train, X_test, y_train, y_test, file_path):
     output:
               None
     '''
-
-    """
     # grid search
     rfc = RandomForestClassifier(random_state=42)
     # Use a different solver if the default 'lbfgs' fails to converge
@@ -314,8 +311,7 @@ def train_models(X_train, X_test, y_train, y_test, file_path):
 
     
     joblib.dump(cv_rfc.best_estimator_, constants.MODELS_OUT_PATH+'rfc_model.pkl')
-    joblib.dump(lrc, constants.MODELS_OUT_PATH+logistic_model.pkl')
-    """
+    joblib.dump(lrc, constants.MODELS_OUT_PATH+'logistic_model.pkl')
 
     rfc_model = joblib.load(constants.MODELS_OUT_PATH+'rfc_model.pkl')
     lr_model = joblib.load(constants.MODELS_OUT_PATH+'logistic_model.pkl')
@@ -328,10 +324,12 @@ def train_models(X_train, X_test, y_train, y_test, file_path):
 
 
 def main():
-    DF = import_data('data/bank_data.csv')
+    DF = import_data(constants.DF_PATH)
 
-    DF[constants.RESPONSE] = DF['Attrition_Flag'].apply(
-        lambda val: 0 if val == "Existing Customer" else 1)
+    # DF[constants.RESPONSE] = DF['Attrition_Flag'].apply(
+    #     lambda val: 0 if val == "Existing Customer" else 1)
+    # DF = request.config.cache.get('cache_df', None)
+
     perform_eda(DF)
 
     X_train, X_test, y_train, y_test = perform_feature_engineering(

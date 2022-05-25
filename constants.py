@@ -15,6 +15,8 @@ CATEGORY_LST = [
 
 MODEL_NAMES = ["Logistic Regression", "Random Forest"]
 
+DF_PATH = 'data/bank_data.csv'
+
 EDA_OUT_PATH = 'images/eda/'
 
 RESULTS_OUT_PATH = 'images/results/'
